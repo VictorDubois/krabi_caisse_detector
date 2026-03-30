@@ -11,6 +11,9 @@
 #include "krabi_msgs/msg/caisses_sides.hpp"
 #include <opencv2/opencv.hpp>
 
+#include <chrono>
+#include <deque>
+
 /**
  * CaisseDetectorNode
  *
@@ -19,8 +22,14 @@
  * whether each tile is "our side up" based on the `is_blue` parameter.
  *
  * Parameters:
- *   is_blue       (bool, default: true)  — if true, blue = our side up
- *   debug_image   (bool, default: false) — if true, publish annotated debug image
+ *   is_blue                (bool,   default: true)   — blue = our side up
+ *   debug_image            (bool,   default: false)  — publish annotated debug image
+ *   history_duration_ms    (int,    default: 1000)   — sliding vote window (ms)
+ *   roi_x                  (int,    default: 0)      — ROI top-left x (px)
+ *   roi_y                  (int,    default: 0)      — ROI top-left y (px)
+ *   roi_width              (int,    default: 0)      — ROI width  (0 = full image)
+ *   roi_height             (int,    default: 0)      — ROI height (0 = full image)
+ *   min_tile_area_fraction (double, default: 0.005)  — min blob area as fraction of ROI area
  *
  * Subscribes:  /krabi_ns/camera_node/image_raw  (sensor_msgs/Image)
  * Publishes:   ~/caisses_sides                  (krabi_msgs/CaissesSides)
@@ -32,26 +41,37 @@
 const cv::Scalar YELLOW_LOW(15, 80, 80);
 const cv::Scalar YELLOW_HIGH(40, 255, 255);
 
-// Blue sits around 100-130 in OpenCV HSV
 const cv::Scalar BLUE_LOW(90, 80, 50);
 const cv::Scalar BLUE_HIGH(140, 255, 255);
-
-// Minimum contour area to be considered a valid tile (px²)
-constexpr double MIN_TILE_AREA = 2000.0;
 
 // Expected number of tiles
 constexpr int N_TILES = 4;
 
+// A blob wider than this multiple of the smallest blob is considered merged
+constexpr double MERGE_RATIO_THRESHOLD = 1.6;
+
 // ── Tile descriptor ───────────────────────────────────────────────────────────
 struct Tile
 {
-    cv::Rect bbox;
-    bool is_blue; // true = blue, false = yellow
-    int cx;       // centroid x (for left-to-right sorting)
+    cv::Rect bbox; // coordinates in ROI space
+    bool is_blue;
+    int cx;       // centroid x in ROI space (for left-to-right sorting)
+    double score; // colour_purity × sqrt(area) — higher = more confident
 };
 
-// ── Helper: build a morphologically-cleaned binary mask ───────────────────────
+// ── Detection result snapshot (one valid frame) ───────────────────────────────
+struct DetectionSnapshot
+{
+    std::array<bool, N_TILES> is_our_side;
+    std::chrono::steady_clock::time_point timestamp;
+};
+
+// ── Free helpers ──────────────────────────────────────────────────────────────
 cv::Mat colourMask(const cv::Mat& hsv, const cv::Scalar& lo, const cv::Scalar& hi);
+
+std::vector<cv::Rect> splitBlobVertically(const cv::Rect& bbox, int n);
+
+int estimateTileWidth(const std::vector<cv::Rect>& blobs);
 
 // ── Node class ────────────────────────────────────────────────────────────────
 class CaisseDetectorNode : public rclcpp::Node
@@ -60,23 +80,46 @@ public:
     CaisseDetectorNode();
 
 private:
-    // Classify a tile region as blue or yellow (uses top 60 % to avoid QR symbol)
+    // ── Detection helpers ─────────────────────────────────────────────────────
+    // Returns colour purity [0,1]: fraction of bbox (top 60%) that is blue or yellow
+    double colourPurity(const cv::Mat& hsv, const cv::Rect& bbox);
+
+    // Classify top-60% of bbox as blue or yellow
     bool regionIsBlue(const cv::Mat& hsv, const cv::Rect& bbox);
 
-    // Map tile colour → "our side" using the is_blue parameter
     bool tileIsOurSide(const Tile& t) const;
 
-    // Main image callback
+    // Clamp and return the effective ROI given current image size
+    cv::Rect effectiveRoi(int img_w, int img_h) const;
+
+    // Compute the minimum tile area threshold from the current ROI size
+    double minTileArea(const cv::Rect& roi) const;
+
+    // ── Callbacks ─────────────────────────────────────────────────────────────
     void imageCb(const sensor_msgs::msg::Image::SharedPtr msg);
 
-    // Publish annotated debug image
-    void publishDebug(const cv::Mat& img,
-                      const std::vector<Tile>& tiles,
+    // ── Publishing ────────────────────────────────────────────────────────────
+    void publishVotedResult(const std_msgs::msg::Header& header);
+
+    void publishDebug(const cv::Mat& full_img,
+                      const std::vector<Tile>& tiles, // ROI-space coords
+                      const cv::Rect& roi,
                       const std_msgs::msg::Header& header);
 
-    // ── Members ──────────────────────────────────────────────────────────────────
+    // ── Members ───────────────────────────────────────────────────────────────
     bool is_blue_{ true };
     bool debug_image_{ false };
+    int history_duration_ms_{ 1000 };
+    double min_tile_area_fraction_{ 0.005 };
+
+    // ROI parameters (0 width/height = full image)
+    int roi_x_{ 0 };
+    int roi_y_{ 0 };
+    int roi_width_{ 0 };
+    int roi_height_{ 0 };
+
+    // Sliding window of valid detections
+    std::deque<DetectionSnapshot> history_;
 
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
     rclcpp::Publisher<krabi_msgs::msg::CaissesSides>::SharedPtr sides_pub_;
