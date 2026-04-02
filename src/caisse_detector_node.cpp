@@ -76,11 +76,11 @@ CaisseDetectorNode::CaisseDetectorNode()
                 roi_height_);
 
     // ── Publishers ────────────────────────────────────────────────────────────
-    sides_pub_ = create_publisher<krabi_msgs::msg::CaissesSides>("~/caisses_sides", 10);
+    sides_pub_ = create_publisher<krabi_msgs::msg::CaissesSides>("caisses_sides", 10);
 
     if (debug_image_)
     {
-        debug_pub_ = create_publisher<sensor_msgs::msg::Image>("~/debug_image", 10);
+        debug_pub_ = create_publisher<sensor_msgs::msg::Image>("debug_image", 10);
     }
 
     // ── Subscriber ────────────────────────────────────────────────────────────
@@ -141,11 +141,11 @@ double CaisseDetectorNode::minTileArea(const cv::Rect& roi) const
 }
 
 // ── colourPurity ──────────────────────────────────────────────────────────────
-// Returns [0, 1]: fraction of the top-60% ROI that is either blue or yellow.
+// Returns [0, 1]: fraction of the ROI that is either blue or yellow.
 double CaisseDetectorNode::colourPurity(const cv::Mat& hsv, const cv::Rect& bbox)
 {
     cv::Rect roi = bbox;
-    roi.height = static_cast<int>(bbox.height * 0.6);
+    roi.height = static_cast<int>(bbox.height);
     if (roi.height < 1)
         roi.height = 1;
     roi &= cv::Rect(0, 0, hsv.cols, hsv.rows);
@@ -397,7 +397,7 @@ void CaisseDetectorNode::publishDebug(const cv::Mat& full_img,
                             + "  s=" + std::to_string(static_cast<int>(t.score));
 
         cv::putText(
-          dbg, label, { full_bbox.x, full_bbox.y - 8 }, cv::FONT_HERSHEY_SIMPLEX, 0.5, colour, 2);
+          dbg, label, { full_bbox.x, full_bbox.y + 24 }, cv::FONT_HERSHEY_SIMPLEX, 0.5, colour, 2);
     }
 
     // ── History buffer size overlay ───────────────────────────────────────────

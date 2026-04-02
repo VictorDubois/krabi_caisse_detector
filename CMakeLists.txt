@@ -28,11 +28,12 @@ target_include_directories(caisse_detector_node PUBLIC
 target_compile_features(caisse_detector_node PUBLIC cxx_std_17)
 
 ament_target_dependencies(caisse_detector_node
-  rclcpp
+  std_msgs
   sensor_msgs
   cv_bridge
   OpenCV
   krabi_msgs
+  rclcpp
 )
 
 

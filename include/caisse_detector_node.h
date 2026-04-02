@@ -81,10 +81,10 @@ public:
 
 private:
     // ── Detection helpers ─────────────────────────────────────────────────────
-    // Returns colour purity [0,1]: fraction of bbox (top 60%) that is blue or yellow
+    // Returns colour purity [0,1]: blue or yellow
     double colourPurity(const cv::Mat& hsv, const cv::Rect& bbox);
 
-    // Classify top-60% of bbox as blue or yellow
+    // Classify bbox as blue or yellow
     bool regionIsBlue(const cv::Mat& hsv, const cv::Rect& bbox);
 
     bool tileIsOurSide(const Tile& t) const;
@@ -110,7 +110,7 @@ private:
     bool is_blue_{ true };
     bool debug_image_{ false };
     int history_duration_ms_{ 1000 };
-    double min_tile_area_fraction_{ 0.005 };
+    double min_tile_area_fraction_{ 0.1 };
 
     // ROI parameters (0 width/height = full image)
     int roi_x_{ 0 };

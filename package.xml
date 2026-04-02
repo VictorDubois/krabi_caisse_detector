@@ -12,9 +12,9 @@
 
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
+  <depend>krabi_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>libopencv-dev</depend>
-  <depend>krabi_msgs</depend>
   <depend>ros2launch</depend>
 
   <export>
