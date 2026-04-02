@@ -28,9 +28,9 @@ def generate_launch_description():
             executable='caisse_detector_node',
             name='krabi_caisse_detector',
             parameters=[{"use_sim_time": use_sim_time_value, "is_blue": isBlue_value, "debug_image": True,
-            "roi_x": 200,
+            "roi_x": 100,
             "roi_y": 0,
-            "roi_width": 800,
-            "roi_height": 550}]
+            "roi_width": 600,
+            "roi_height": 350}]
         )
     ])
