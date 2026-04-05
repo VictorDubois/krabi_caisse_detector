@@ -85,7 +85,7 @@ CaisseDetectorNode::CaisseDetectorNode()
 
     // ── Subscriber ────────────────────────────────────────────────────────────
     image_sub_ = create_subscription<sensor_msgs::msg::Image>(
-      "krabi_cam/image_raw",
+      "krabi_cam/image_raw/compressed",
       10,
       std::bind(&CaisseDetectorNode::imageCb, this, std::placeholders::_1));
 
