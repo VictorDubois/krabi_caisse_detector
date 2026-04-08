@@ -96,7 +96,7 @@ private:
     double minTileArea(const cv::Rect& roi) const;
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
-    void imageCb(const sensor_msgs::msg::Image::SharedPtr msg);
+    void imageCb(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
 
     // ── Publishing ────────────────────────────────────────────────────────────
     void publishVotedResult(const std_msgs::msg::Header& header);
@@ -121,7 +121,7 @@ private:
     // Sliding window of valid detections
     std::deque<DetectionSnapshot> history_;
 
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
     rclcpp::Publisher<krabi_msgs::msg::CaissesSides>::SharedPtr sides_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr debug_pub_;
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;

@@ -84,7 +84,7 @@ CaisseDetectorNode::CaisseDetectorNode()
     }
 
     // ── Subscriber ────────────────────────────────────────────────────────────
-    image_sub_ = create_subscription<sensor_msgs::msg::Image>(
+    image_sub_ = create_subscription<sensor_msgs::msg::CompressedImage>(
       "krabi_cam/image_raw/compressed",
       10,
       std::bind(&CaisseDetectorNode::imageCb, this, std::placeholders::_1));
@@ -191,7 +191,7 @@ bool CaisseDetectorNode::tileIsOurSide(const Tile& t) const
 }
 
 // ── imageCb ───────────────────────────────────────────────────────────────────
-void CaisseDetectorNode::imageCb(const sensor_msgs::msg::Image::SharedPtr msg)
+void CaisseDetectorNode::imageCb(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
 {
     cv_bridge::CvImagePtr cv_ptr;
     try
