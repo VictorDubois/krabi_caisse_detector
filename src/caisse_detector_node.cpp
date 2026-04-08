@@ -300,7 +300,7 @@ void CaisseDetectorNode::imageCb(const sensor_msgs::msg::CompressedImage::Shared
         return;
     }
 
-    RCLCPP_INFO_STREAM(get_logger(), "Valid detection!");
+    // RCLCPP_INFO_STREAM(get_logger(), "Valid detection!");
 
     // ── Store valid detection in history ─────────────────────────────────────
     DetectionSnapshot snap;
@@ -357,7 +357,7 @@ void CaisseDetectorNode::publishVotedResult(const std_msgs::msg::Header& /*heade
                 votes[2],
                 votes[3]);
 
-    RCLCPP_INFO_STREAM(get_logger(), "Published detection!");
+    // RCLCPP_INFO_STREAM(get_logger(), "Published detection!");
 }
 
 // ── publishDebug ──────────────────────────────────────────────────────────────
