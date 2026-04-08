@@ -38,7 +38,7 @@
 
 // ── HSV colour ranges ─────────────────────────────────────────────────────────
 // Tune these if lighting conditions change.
-const cv::Scalar YELLOW_LOW(15, 80, 80);
+const cv::Scalar YELLOW_LOW(15, 103, 162);
 const cv::Scalar YELLOW_HIGH(40, 255, 255);
 
 const cv::Scalar BLUE_LOW(90, 80, 50);
