@@ -7,7 +7,7 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 def generate_launch_description():
     isBlue_value = LaunchConfiguration('isBlue')
     use_sim_time_value = LaunchConfiguration('use_sim_time')
-    
+
     isBlue_launch_arg = DeclareLaunchArgument(
         'isBlue',
         default_value='False'
@@ -20,17 +20,32 @@ def generate_launch_description():
     return LaunchDescription([
         isBlue_launch_arg,
         use_sim_time_launch_arg,
-        #launch_ros.actions.SetParameter(name='isBlue', value=isBlue_value),
         Node(
-            #prefix=['gdbserver localhost:3000'],
             package='krabi_caisse_detector',
             namespace='krabi_ns',
             executable='caisse_detector_node',
             name='krabi_caisse_detector',
-            parameters=[{"use_sim_time": use_sim_time_value, "is_blue": isBlue_value, "debug_image": True,
-            "roi_x": 100,
-            "roi_y": 0,
-            "roi_width": 600,
-            "roi_height": 350}]
+            parameters=[{
+                "use_sim_time": use_sim_time_value,
+                "is_blue": isBlue_value,
+                "debug_image": True,
+                # Tune these once the camera is in its final position
+                "roi_leftmost_x":      0,
+                "roi_leftmost_y":      0,
+                "roi_leftmost_width":  0,
+                "roi_leftmost_height": 0,
+                "roi_leftcenter_x":      0,
+                "roi_leftcenter_y":      0,
+                "roi_leftcenter_width":  0,
+                "roi_leftcenter_height": 0,
+                "roi_rightcenter_x":      0,
+                "roi_rightcenter_y":      0,
+                "roi_rightcenter_width":  0,
+                "roi_rightcenter_height": 0,
+                "roi_rightmost_x":      0,
+                "roi_rightmost_y":      0,
+                "roi_rightmost_width":  0,
+                "roi_rightmost_height": 0,
+            }]
         )
     ])
