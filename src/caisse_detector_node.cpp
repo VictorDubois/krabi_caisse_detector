@@ -67,11 +67,11 @@ CaisseDetectorNode::CaisseDetectorNode()
     sides_pub_ = create_publisher<krabi_msgs::msg::CaissesSides>("caisses_sides", 10);
 
     if (debug_image_)
-        debug_pub_ = create_publisher<sensor_msgs::msg::Image>("debug_image", 10);
+        debug_pub_ = create_publisher<sensor_msgs::msg::CompressedImage>("debug_image", 10);
 
     // ── Subscriber ────────────────────────────────────────────────────────────
-    image_sub_ = create_subscription<sensor_msgs::msg::CompressedImage>(
-      "krabi_cam/image_raw/compressed",
+    image_sub_ = create_subscription<sensor_msgs::msg::Image>(
+      "krabi_cam/image_raw", // /compressed",
       10,
       std::bind(&CaisseDetectorNode::imageCb, this, std::placeholders::_1));
 
@@ -96,10 +96,14 @@ CaisseDetectorNode::CaisseDetectorNode()
                   for (int i = 0; i < N_TILES; i++)
                   {
                       std::string pfx = std::string("roi_") + ROI_NAMES[i] + "_";
-                      if (p.get_name() == pfx + "x") rois_[i].x = p.as_int();
-                      else if (p.get_name() == pfx + "y") rois_[i].y = p.as_int();
-                      else if (p.get_name() == pfx + "width") rois_[i].w = p.as_int();
-                      else if (p.get_name() == pfx + "height") rois_[i].h = p.as_int();
+                      if (p.get_name() == pfx + "x")
+                          rois_[i].x = p.as_int();
+                      else if (p.get_name() == pfx + "y")
+                          rois_[i].y = p.as_int();
+                      else if (p.get_name() == pfx + "width")
+                          rois_[i].w = p.as_int();
+                      else if (p.get_name() == pfx + "height")
+                          rois_[i].h = p.as_int();
                   }
               }
           }
@@ -125,8 +129,14 @@ bool CaisseDetectorNode::tileIsOurSide(bool is_blue) const
 }
 
 // ── imageCb ───────────────────────────────────────────────────────────────────
-void CaisseDetectorNode::imageCb(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+void CaisseDetectorNode::imageCb(const sensor_msgs::msg::Image::SharedPtr msg)
 {
+    if ((nb_images_received++) % 6 != 0)
+    {
+        // Only process 1/3 of the images to reduce CPU load
+        return;
+    }
+
     cv_bridge::CvImagePtr cv_ptr;
     try
     {
@@ -207,10 +217,10 @@ void CaisseDetectorNode::publishVotedResult(const std_msgs::msg::Header& /*heade
     }
 
     auto out = krabi_msgs::msg::CaissesSides();
-    out.leftmost_is_our_side_up    = (totals[0] > 0) && (votes[0] * 2 >= totals[0]);
-    out.leftcenter_is_our_side_up  = (totals[1] > 0) && (votes[1] * 2 >= totals[1]);
+    out.leftmost_is_our_side_up = (totals[0] > 0) && (votes[0] * 2 >= totals[0]);
+    out.leftcenter_is_our_side_up = (totals[1] > 0) && (votes[1] * 2 >= totals[1]);
     out.rightcenter_is_our_side_up = (totals[2] > 0) && (votes[2] * 2 >= totals[2]);
-    out.rightmost_is_our_side_up   = (totals[3] > 0) && (votes[3] * 2 >= totals[3]);
+    out.rightmost_is_our_side_up = (totals[3] > 0) && (votes[3] * 2 >= totals[3]);
 
     sides_pub_->publish(out);
 
@@ -220,10 +230,14 @@ void CaisseDetectorNode::publishVotedResult(const std_msgs::msg::Header& /*heade
                 out.leftcenter_is_our_side_up,
                 out.rightcenter_is_our_side_up,
                 out.rightmost_is_our_side_up,
-                votes[0], totals[0],
-                votes[1], totals[1],
-                votes[2], totals[2],
-                votes[3], totals[3]);
+                votes[0],
+                totals[0],
+                votes[1],
+                totals[1],
+                votes[2],
+                totals[2],
+                votes[3],
+                totals[3]);
 }
 
 // ── publishDebug ──────────────────────────────────────────────────────────────
@@ -243,12 +257,13 @@ void CaisseDetectorNode::publishDebug(const cv::Mat& full_img,
         int hist_size = static_cast<int>(history_[i].size());
         int v = 0;
         for (auto& s : history_[i])
-            if (s.is_our_side) ++v;
+            if (s.is_our_side)
+                ++v;
         bool voted = (hist_size > 0) && (v * 2 >= hist_size);
 
         // Grey = no coverage, green = our side, red = their side
         cv::Scalar colour = !valid[i] ? cv::Scalar(128, 128, 128)
-                          : voted     ? cv::Scalar(0, 220, 0)
+                            : voted   ? cv::Scalar(0, 220, 0)
                                       : cv::Scalar(0, 0, 220);
 
         cv::rectangle(dbg, roi, colour, 2);
@@ -260,11 +275,11 @@ void CaisseDetectorNode::publishDebug(const cv::Mat& full_img,
             label += is_our_side[i] ? " OUR" : " THEIR";
         label += " v" + std::to_string(v) + "/" + std::to_string(hist_size);
 
-        cv::putText(dbg, label, { roi.x + 4, roi.y + 20 },
-                    cv::FONT_HERSHEY_SIMPLEX, 0.5, colour, 2);
+        cv::putText(
+          dbg, label, { roi.x + 4, roi.y + 20 }, cv::FONT_HERSHEY_SIMPLEX, 0.5, colour, 2);
     }
 
-    debug_pub_->publish(*cv_bridge::CvImage(header, "bgr8", dbg).toImageMsg());
+    debug_pub_->publish(*cv_bridge::CvImage(header, "bgr8", dbg).toCompressedImageMsg());
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────

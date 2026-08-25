@@ -29,7 +29,8 @@
  *   min_color_coverage         (double, default: 0.05)   — min fraction of RoI covered by
  *                                                          blue or yellow to count as valid
  *   roi_{leftmost,leftcenter,rightcenter,rightmost}_{x,y,width,height}
- *                              (int,    default: 0)      — RoI corners (0 width/height = full image)
+ *                              (int,    default: 0)      — RoI corners (0 width/height = full
+ * image)
  *
  * Subscribes:  krabi_cam/image_raw/compressed  (sensor_msgs/CompressedImage)
  * Publishes:   ~/caisses_sides                 (krabi_msgs/CaissesSides)
@@ -73,7 +74,7 @@ private:
     cv::Rect effectiveRoi(int idx, int img_w, int img_h) const;
 
     // ── Callbacks ─────────────────────────────────────────────────────────────
-    void imageCb(const sensor_msgs::msg::CompressedImage::SharedPtr msg);
+    void imageCb(const sensor_msgs::msg::Image::SharedPtr msg);
 
     // ── Publishing ────────────────────────────────────────────────────────────
     void publishVotedResult(const std_msgs::msg::Header& header);
@@ -90,6 +91,8 @@ private:
     int history_duration_ms_{ 1000 };
     double min_color_coverage_{ 0.05 };
 
+    int nb_images_received{ 0 };
+
     struct RoiParams
     {
         int x{ 0 }, y{ 0 }, w{ 0 }, h{ 0 };
@@ -99,8 +102,8 @@ private:
     // One independent vote history per RoI
     std::array<std::deque<DetectionSnapshot>, N_TILES> history_;
 
-    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
     rclcpp::Publisher<krabi_msgs::msg::CaissesSides>::SharedPtr sides_pub_;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr debug_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr debug_pub_;
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_cb_;
 };
